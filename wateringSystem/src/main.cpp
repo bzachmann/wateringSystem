@@ -14,7 +14,7 @@ void setup()
   Serial.begin(115200);
   delay(10);
 
-  initMqttConnection();
+  MqttManager::inst.init();
 
   printTimer.setDuration(1000);
   printTimer.start();
@@ -23,23 +23,18 @@ void setup()
 void loop() 
 {
   bool wifiConnected = manageWifiConnection();
-  bool mqttConnected = false;
+  
+  MqttManager::inst.setWifiConnected(wifiConnected);
+  MqttManager::inst.update();
 
-  if(wifiConnected)
-  {
-    mqttConnected = manageMqttConnection();
-  }
-
-  runMqttProcess();
-
-  wateringManager.setManualWateringDurationSec(getManualWateringDurationSec());
-  wateringManager.setStartManualWateringCmd(getStartManualWateringCmd());
-  wateringManager.setStopWateringCmd(getStopWateringCmd());
+  wateringManager.setManualWateringDurationSec(MqttManager::inst.getManualWateringDurationSec());
+  wateringManager.setStartManualWateringCmd(MqttManager::inst.getStartManualWateringCmd());
+  wateringManager.setStopWateringCmd(MqttManager::inst.getStopWateringCmd());
   wateringManager.update();
 
 
   printTimer.update();
-  if(mqttConnected && printTimer.isExpired())
+  if(printTimer.isExpired())
   {
     printTimer.setDuration(1000);
     Serial.print("manualWateringTimeRemaining: ");

@@ -1,42 +1,62 @@
 #include "mqttmanager.h"
 
-#include <WiFi.h>
-#include <PubSubClient.h>
-
 #include "privateinfo.h"
 
-#include <countdowntimer.h>
+MqttManager MqttManager::inst;
 
-
-
-//********* Static Objects *********//
-static WiFiClient wifiClient;
-static PubSubClient mqttClient(wifiClient);
-static char const * clientID = "WateringSystemPumpManager";
-
-static uint16_t manualWateringDurationSec = 90;
-uint16_t manualWateringTimeRemainingSec = 0;
-bool manualWateringOn = false;
-static bool startNewManualWateringCmd = false;
-static bool stopWateringCmd = false;
-
-//********* Static Function Prototypes *********//
-static void mqttCallback(char* topic, byte * data, unsigned int length);
-static void subscribeToTopics();
-static String statusToStr(int8_t status);
-
-static void updateManualWateringTimer();
-static void printMqttPayload(char* topic, byte * data, unsigned int length);
-static int32_t mqttPayloadToInt(byte * data, uint32_t length);
-
-//********* Public Functions *********//
-void initMqttConnection()
+MqttManager::MqttManager():
+  wifiConnected(false),
+  wifiClient(),
+  mqttClient(wifiClient),
+  clientID("WateringSystemPumpManager"),
+  startNewManualWateringCmd(false),
+  stopWateringCmd(false),
+  manualWateringDurationSec(90)
 {
-    mqttClient.setServer(mqtt_server_addr, mqtt_server_port);
-    mqttClient.setCallback(mqttCallback);
+
 }
 
-bool manageMqttConnection() 
+void MqttManager::init()
+{
+  mqttClient.setServer(mqtt_server_addr, mqtt_server_port);
+  mqttClient.setCallback(staticMqttCallback);
+}
+
+void MqttManager::update()
+{
+  if (wifiConnected)
+  {
+    manageMqttConnection();
+  }
+
+  mqttClient.loop();
+}
+
+void MqttManager::setWifiConnected(bool connected)
+{
+  wifiConnected = connected;
+}
+
+bool MqttManager::getStartManualWateringCmd()
+{
+  bool retVal = startNewManualWateringCmd;
+  startNewManualWateringCmd = false;
+  return retVal;
+}
+
+uint16_t MqttManager::getManualWateringDurationSec()
+{
+  return manualWateringDurationSec;
+}
+
+bool MqttManager::getStopWateringCmd()
+{
+  bool retVal = stopWateringCmd;
+  stopWateringCmd = false;
+  return retVal;
+}
+
+bool MqttManager::manageMqttConnection() 
 //Should only be called if connected to network
 //returns true if successfully connected to mqtt server
 {
@@ -89,34 +109,12 @@ bool manageMqttConnection()
   return retVal;
 }
 
-void runMqttProcess()
+void MqttManager::staticMqttCallback(char * topic, byte * data, unsigned int length)
 {
-  mqttClient.loop();
-
-  //updateManualWateringTimer();
+  inst.mqttCallback(topic, data, length);
 }
 
-bool getStartManualWateringCmd()
-{
-  bool retVal = startNewManualWateringCmd;
-  startNewManualWateringCmd = false;
-  return retVal;
-}
-
-uint16_t getManualWateringDurationSec()
-{
-  return manualWateringDurationSec;
-}
-
-bool getStopWateringCmd()
-{
-  bool retVal = stopWateringCmd;
-  stopWateringCmd = false;
-  return retVal;
-}
-
-//********* Static Functions *********//
-static void mqttCallback(char* topic, byte * data, unsigned int length)
+void MqttManager::mqttCallback(char * topic, byte * data, unsigned int length)
 {
   printMqttPayload(topic, data, length);
 
@@ -137,14 +135,13 @@ static void mqttCallback(char* topic, byte * data, unsigned int length)
   }
 }
 
-static void subscribeToTopics()
+void MqttManager::subscribeToTopics()
 {
     mqttClient.subscribe("/#", 1);
     mqttClient.loop();
 }
 
-
-static String statusToStr(int8_t status)
+String MqttManager::statusToStr(int8_t status)
 {
     String retVal = "";
 
@@ -198,43 +195,7 @@ static String statusToStr(int8_t status)
     return retVal;
 }
 
-//void updateManualWateringTimer()
-//{
-//  static CountdownTimer manualWateringTimer;
-//
-//  if (startNewManualWateringCmd)
-//  {
-//    startNewManualWateringCmd = false;
-//    manualWateringTimer.setDuration((uint32_t)manualWateringDurationSec * 1000);
-//    manualWateringTimer.start();
-//  }
-//
-//  if(stopWateringCmd)
-//  {
-//    stopWateringCmd = false;
-//    manualWateringTimer.stop();
-//  }
-//
-//  manualWateringTimer.update();
-//
-//  if(manualWateringTimer.isRunning())
-//  {
-//    manualWateringOn = true;
-//    if(manualWateringTimer.isExpired())
-//    {
-//      manualWateringOn = false;
-//      manualWateringTimer.stop();
-//    }
-//    manualWateringTimeRemainingSec = manualWateringTimer.time() / 1000;
-//  }
-//  else
-//  {
-//    manualWateringOn = false;
-//    manualWateringTimeRemainingSec = 0;
-//  }
-//}
-//
-static void printMqttPayload(char* topic, byte * data, unsigned int length)
+void MqttManager::printMqttPayload(char* topic, byte * data, unsigned int length)
 {
   Serial.println("");
   Serial.print("New MQTT message from topic ");
@@ -247,7 +208,7 @@ static void printMqttPayload(char* topic, byte * data, unsigned int length)
   Serial.println("");
 }
 
-static int32_t mqttPayloadToInt(byte * data, uint32_t length)
+int32_t MqttManager::mqttPayloadToInt(byte * data, uint32_t length)
 {
     String str = "";
     for(uint32_t i = 0; i < length; i++)
