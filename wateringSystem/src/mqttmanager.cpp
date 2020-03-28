@@ -18,7 +18,7 @@ static uint16_t manualWateringDurationSec = 90;
 uint16_t manualWateringTimeRemainingSec = 0;
 bool manualWateringOn = false;
 static bool startNewManualWateringCmd = false;
-static bool stopManualWateringCmd = false;
+static bool stopWateringCmd = false;
 
 //********* Static Function Prototypes *********//
 static void mqttCallback(char* topic, byte * data, unsigned int length);
@@ -26,6 +26,8 @@ static void subscribeToTopics();
 static String statusToStr(int8_t status);
 
 static void updateManualWateringTimer();
+static void printMqttPayload(char* topic, byte * data, unsigned int length);
+static int32_t mqttPayloadToInt(byte * data, uint32_t length);
 
 //********* Public Functions *********//
 void initMqttConnection()
@@ -91,41 +93,48 @@ void runMqttProcess()
 {
   mqttClient.loop();
 
-  updateManualWateringTimer();
+  //updateManualWateringTimer();
+}
+
+bool getStartManualWateringCmd()
+{
+  bool retVal = startNewManualWateringCmd;
+  startNewManualWateringCmd = false;
+  return retVal;
+}
+
+uint16_t getManualWateringDurationSec()
+{
+  return manualWateringDurationSec;
+}
+
+bool getStopWateringCmd()
+{
+  bool retVal = stopWateringCmd;
+  stopWateringCmd = false;
+  return retVal;
 }
 
 //********* Static Functions *********//
 static void mqttCallback(char* topic, byte * data, unsigned int length)
 {
-    Serial.println("");
-    Serial.print("New MQTT message from topic ");
-    Serial.print(topic);
-    Serial.print(": ");
-    for(uint16_t i = 0; i < length; i++)
-    {
-        Serial.print((char)data[i]);
-    }
+  printMqttPayload(topic, data, length);
 
-    if(strcmp(topic, "/wateringSystem/commands/manualWateringDuration") == 0)
+  if(strcmp(topic, "/wateringSystem/commands/manualWateringDuration") == 0)
+  {
+    manualWateringDurationSec = static_cast<uint16_t>(mqttPayloadToInt(data, length));
+  }
+  else if(strcmp(topic, "/wateringSystem/commands/manualWateringCmd") == 0)
+  {
+    if(static_cast<char>(data[0]) == '0')
     {
-      String temp = "";
-      for(uint16_t i = 0; i < length; i++)
-      {
-        temp.concat((char)data[i]);
-      }
-      manualWateringDurationSec = temp.toInt();//String(((char*)data)).toInt();//atoi((char*)data);
+      stopWateringCmd = true;
     }
-    else if(strcmp(topic, "/wateringSystem/commands/manualWateringCmd") == 0)
+    else
     {
-      if(atoi((char*)data) == 0)
-      {
-        stopManualWateringCmd = true;
-      }
-      else
-      {
-        startNewManualWateringCmd = true;
-      }
+      startNewManualWateringCmd = true;
     }
+  }
 }
 
 static void subscribeToTopics()
@@ -189,38 +198,62 @@ static String statusToStr(int8_t status)
     return retVal;
 }
 
-void updateManualWateringTimer()
+//void updateManualWateringTimer()
+//{
+//  static CountdownTimer manualWateringTimer;
+//
+//  if (startNewManualWateringCmd)
+//  {
+//    startNewManualWateringCmd = false;
+//    manualWateringTimer.setDuration((uint32_t)manualWateringDurationSec * 1000);
+//    manualWateringTimer.start();
+//  }
+//
+//  if(stopWateringCmd)
+//  {
+//    stopWateringCmd = false;
+//    manualWateringTimer.stop();
+//  }
+//
+//  manualWateringTimer.update();
+//
+//  if(manualWateringTimer.isRunning())
+//  {
+//    manualWateringOn = true;
+//    if(manualWateringTimer.isExpired())
+//    {
+//      manualWateringOn = false;
+//      manualWateringTimer.stop();
+//    }
+//    manualWateringTimeRemainingSec = manualWateringTimer.time() / 1000;
+//  }
+//  else
+//  {
+//    manualWateringOn = false;
+//    manualWateringTimeRemainingSec = 0;
+//  }
+//}
+//
+static void printMqttPayload(char* topic, byte * data, unsigned int length)
 {
-  static CountdownTimer manualWateringTimer;
-
-  if (startNewManualWateringCmd)
+  Serial.println("");
+  Serial.print("New MQTT message from topic ");
+  Serial.print(topic);
+  Serial.print(": ");
+  for(uint16_t i = 0; i < length; i++)
   {
-    startNewManualWateringCmd = false;
-    manualWateringTimer.setDuration((uint32_t)manualWateringDurationSec * 1000);
-    manualWateringTimer.start();
+      Serial.print((char)data[i]);
   }
-
-  if(stopManualWateringCmd)
-  {
-    stopManualWateringCmd = false;
-    manualWateringTimer.stop();
-  }
-
-  manualWateringTimer.update();
-
-  if(manualWateringTimer.isRunning())
-  {
-    manualWateringOn = true;
-    if(manualWateringTimer.isExpired())
-    {
-      manualWateringOn = false;
-      manualWateringTimer.stop();
-    }
-    manualWateringTimeRemainingSec = manualWateringTimer.time() / 1000;
-  }
-  else
-  {
-    manualWateringOn = false;
-    manualWateringTimeRemainingSec = 0;
-  }
+  Serial.println("");
 }
+
+static int32_t mqttPayloadToInt(byte * data, uint32_t length)
+{
+    String str = "";
+    for(uint32_t i = 0; i < length; i++)
+    {
+      str.concat(static_cast<char>(data[i]));
+    }
+    return str.toInt();
+}
+

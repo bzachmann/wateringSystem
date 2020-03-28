@@ -2,10 +2,12 @@
 
 #include "wifimanager.h"
 #include "mqttmanager.h"
+#include "wateringmanager.h"
 
 #include <countdowntimer.h>
 
 static CountdownTimer printTimer;
+static WateringManager wateringManager;
 
 void setup() 
 {
@@ -30,13 +32,19 @@ void loop()
 
   runMqttProcess();
 
+  wateringManager.setManualWateringDurationSec(getManualWateringDurationSec());
+  wateringManager.setStartManualWateringCmd(getStartManualWateringCmd());
+  wateringManager.setStopWateringCmd(getStopWateringCmd());
+  wateringManager.update();
+
+
   printTimer.update();
-  if(printTimer.isExpired())
+  if(mqttConnected && printTimer.isExpired())
   {
     printTimer.setDuration(1000);
     Serial.print("manualWateringTimeRemaining: ");
-    Serial.println(manualWateringTimeRemainingSec);
+    Serial.println(wateringManager.getWateringTimeRemainingSec());
     Serial.print("manualWateringOn: ");
-    Serial.println(manualWateringOn);
+    Serial.println(wateringManager.getPumpState());
   }
 }
