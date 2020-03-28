@@ -5,6 +5,8 @@
 
 #include "privateinfo.h"
 
+#include <countdowntimer.h>
+
 
 
 //********* Static Objects *********//
@@ -12,10 +14,18 @@ static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 static char const * clientID = "WateringSystemPumpManager";
 
+static uint16_t manualWateringDurationSec = 90;
+uint16_t manualWateringTimeRemainingSec = 0;
+bool manualWateringOn = false;
+static bool startNewManualWateringCmd = false;
+static bool stopManualWateringCmd = false;
+
 //********* Static Function Prototypes *********//
 static void mqttCallback(char* topic, byte * data, unsigned int length);
 static void subscribeToTopics();
 static String statusToStr(int8_t status);
+
+static void updateManualWateringTimer();
 
 //********* Public Functions *********//
 void initMqttConnection()
@@ -79,7 +89,9 @@ bool manageMqttConnection()
 
 void runMqttProcess()
 {
-    mqttClient.loop();
+  mqttClient.loop();
+
+  updateManualWateringTimer();
 }
 
 //********* Static Functions *********//
@@ -92,6 +104,27 @@ static void mqttCallback(char* topic, byte * data, unsigned int length)
     for(uint16_t i = 0; i < length; i++)
     {
         Serial.print((char)data[i]);
+    }
+
+    if(strcmp(topic, "/wateringSystem/commands/manualWateringDuration") == 0)
+    {
+      String temp = "";
+      for(uint16_t i = 0; i < length; i++)
+      {
+        temp.concat((char)data[i]);
+      }
+      manualWateringDurationSec = temp.toInt();//String(((char*)data)).toInt();//atoi((char*)data);
+    }
+    else if(strcmp(topic, "/wateringSystem/commands/manualWateringCmd") == 0)
+    {
+      if(atoi((char*)data) == 0)
+      {
+        stopManualWateringCmd = true;
+      }
+      else
+      {
+        startNewManualWateringCmd = true;
+      }
     }
 }
 
@@ -154,4 +187,40 @@ static String statusToStr(int8_t status)
     }
 
     return retVal;
+}
+
+void updateManualWateringTimer()
+{
+  static CountdownTimer manualWateringTimer;
+
+  if (startNewManualWateringCmd)
+  {
+    startNewManualWateringCmd = false;
+    manualWateringTimer.setDuration((uint32_t)manualWateringDurationSec * 1000);
+    manualWateringTimer.start();
+  }
+
+  if(stopManualWateringCmd)
+  {
+    stopManualWateringCmd = false;
+    manualWateringTimer.stop();
+  }
+
+  manualWateringTimer.update();
+
+  if(manualWateringTimer.isRunning())
+  {
+    manualWateringOn = true;
+    if(manualWateringTimer.isExpired())
+    {
+      manualWateringOn = false;
+      manualWateringTimer.stop();
+    }
+    manualWateringTimeRemainingSec = manualWateringTimer.time() / 1000;
+  }
+  else
+  {
+    manualWateringOn = false;
+    manualWateringTimeRemainingSec = 0;
+  }
 }

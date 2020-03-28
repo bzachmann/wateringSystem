@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+
+
 extern bool manageWifiConnection();
 
 #endif /* WIFIMANAGER_H */
