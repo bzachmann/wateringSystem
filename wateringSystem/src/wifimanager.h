@@ -3,8 +3,23 @@
 
 #include <Arduino.h>
 
+class WifiManager
+{
+public:
+    WifiManager();
 
+    void update();
+    bool isConnected();
 
-extern bool manageWifiConnection();
+public:
+    static WifiManager inst;
+
+private:
+    static String statusToStr(uint8_t status);
+
+private:
+    bool connected;
+
+};
 
 #endif /* WIFIMANAGER_H */

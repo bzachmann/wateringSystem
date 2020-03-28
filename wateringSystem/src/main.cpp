@@ -22,9 +22,9 @@ void setup()
 
 void loop() 
 {
-  bool wifiConnected = manageWifiConnection();
+  WifiManager::inst.update();
   
-  MqttManager::inst.setWifiConnected(wifiConnected);
+  MqttManager::inst.setWifiConnected(WifiManager::inst.isConnected());
   MqttManager::inst.update();
 
   wateringManager.setManualWateringDurationSec(MqttManager::inst.getManualWateringDurationSec());

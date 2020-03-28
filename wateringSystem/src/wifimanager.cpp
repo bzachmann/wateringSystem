@@ -1,19 +1,20 @@
 #include "wifimanager.h"
 
-#include <Arduino.h>
 #include <WiFi.h>
 
 #include "privateinfo.h"
 
-//********* Static Function Prototypes *********//
-static String statusToStr(uint8_t status);
+WifiManager WifiManager::inst;
 
+WifiManager::WifiManager():
+  connected(false)
+{
 
-//********* Public Functions *********//
-bool manageWifiConnection()
-{ 
-  bool retVal = false;
-  
+}
+
+void WifiManager::update()
+{   
+  connected = false;
   static bool displayedIp = false;
 
   if(WiFi.status() != WL_CONNECTED)
@@ -45,7 +46,7 @@ bool manageWifiConnection()
   }
   else
   {    
-    retVal = true;
+    connected = true;
     
     if(!displayedIp)
     {
@@ -57,12 +58,14 @@ bool manageWifiConnection()
       Serial.println(WiFi.localIP());
     }
   }
-
-  return retVal;
 }
 
-//********* Static Functions *********//
-static String statusToStr(uint8_t status)
+bool WifiManager::isConnected()
+{
+  return connected;
+}
+
+String WifiManager::statusToStr(uint8_t status)
 {
   String retVal = "";
 

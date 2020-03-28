@@ -43,15 +43,4 @@ private:
     uint16_t manualWateringDurationSec;
 };
 
-//extern void initMqttConnection();
-//extern bool manageMqttConnection();
-//extern void runMqttProcess();
-//
-//extern bool getStartManualWateringCmd(); //latched to true on rcv, set to false on consumption
-//extern uint16_t getManualWateringDurationSec();
-//
-//extern bool getStopWateringCmd(); //latched to true on rcv, set to false on consumption
-
-
-
 #endif /* MQTTMANAGER_H */
