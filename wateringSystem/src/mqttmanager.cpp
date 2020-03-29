@@ -6,12 +6,15 @@ MqttManager MqttManager::inst;
 
 MqttManager::MqttManager():
   wifiConnected(false),
+  mqttConnected(false),
   wifiClient(),
   mqttClient(wifiClient),
   clientID("WateringSystemPumpManager"),
   startNewManualWateringCmd(false),
   stopWateringCmd(false),
-  manualWateringDurationSec(90)
+  manualWateringDurationSec(90),
+  pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), false, 5000, true),
+  wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), false, 5000, true)
 {
 
 }
@@ -24,10 +27,10 @@ void MqttManager::init()
 
 void MqttManager::update()
 {
-  if (wifiConnected)
-  {
-    manageMqttConnection();
-  }
+  manageMqttConnection();
+
+  pumpStatePublisher.update();
+  wateringTimeRemainingPublisher.update();
 
   mqttClient.loop();
 }
@@ -56,58 +59,69 @@ bool MqttManager::getStopWateringCmd()
   return retVal;
 }
 
-bool MqttManager::manageMqttConnection() 
+void MqttManager::setPumpState(bool state)
+{
+  pumpStatePublisher.setValue(state ? String("1") : String("0"));
+}
+
+void MqttManager::setWateringTimeRemainingSec(uint16_t sec)
+{
+  wateringTimeRemainingPublisher.setValue(String(sec));
+}
+
+void MqttManager::manageMqttConnection() 
 //Should only be called if connected to network
 //returns true if successfully connected to mqtt server
 {
-  bool retVal = false;
+  mqttConnected = false;
   
-  static bool subscribed = false;
-  
-  if(mqttClient.state() != MQTT_CONNECTED)
+  if(wifiConnected)
   {
-    subscribed = false;
+    static bool subscribed = false;
 
-    static uint32_t time = millis() + 6000;
-    uint32_t newTime = millis();
-  
-    if(   (time > newTime) //rollover
-       || ((newTime - time) > 5000))
+    if(mqttClient.state() != MQTT_CONNECTED)
     {
-      time = newTime;
-      Serial.println("");
-      Serial.println("Connecting mqtt");
-      mqttClient.disconnect();
-      mqttClient.connect(clientID);
+      subscribed = false;
+
+      static uint32_t time = millis() + 6000;
+      uint32_t newTime = millis();
+
+      if(   (time > newTime) //rollover
+         || ((newTime - time) > 5000))
+      {
+        time = newTime;
+        Serial.println("");
+        Serial.println("Connecting mqtt");
+        mqttClient.disconnect();
+        mqttClient.connect(clientID);
+      }
+
+      static int8_t state = 50;
+      int8_t newState = mqttClient.state();
+
+      if(newState != state)
+      {
+        state = newState;
+        Serial.print("MQTT status: ");
+        Serial.println(statusToStr(newState));
+      }
     }
+    else
+    {    
+      mqttConnected = true;
 
-    static int8_t state = 50;
-    int8_t newState = mqttClient.state();
-  
-    if(newState != state)
-    {
-      state = newState;
-      Serial.print("MQTT status: ");
-      Serial.println(statusToStr(newState));
+      if(!subscribed)
+      {
+        subscribed = true;
+
+        Serial.println("");
+        Serial.println("MQTT connected");
+        Serial.println("Subscribing to topics");
+        subscribeToTopics();
+      }
     }
   }
-  else
-  {    
-    retVal = true;
-    
-    if(!subscribed)
-    {
-      subscribed = true;
-
-      Serial.println("");
-      Serial.println("MQTT connected");
-      Serial.println("Subscribing to topics");
-      subscribeToTopics();
-    }
-  }
-
-  return retVal;
-}
+} 
 
 void MqttManager::staticMqttCallback(char * topic, byte * data, unsigned int length)
 {
