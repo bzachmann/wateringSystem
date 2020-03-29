@@ -178,4 +178,9 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
             timeUntilNextScheduledWateringSec =  scheduledWateringIntervalSec - timeSinceLastScheduledStartSec;
         }
     }
+    else
+    {
+        timeUntilNextScheduledWateringSec = dateTimeReferenceSec - currentTimeSec;
+    }
+    
 }
