@@ -33,6 +33,7 @@ private:
     bool startManualWateringCmd;
     uint16_t manualWateringDurationSec;
     uint32_t dateTimeReferenceSec; //Unix time stamp (time since Epoch).  B/c uint32_t, will stop working in 2038
+    bool startScheduledWateringCmd;
     uint32_t scheduledWateringIntervalSec;
     uint16_t scheduledWateringDurationSec;
     uint32_t currentTimeSec;

@@ -8,6 +8,7 @@ WateringManager::WateringManager():
     startManualWateringCmd(false),
     manualWateringDurationSec(0),
     dateTimeReferenceSec(0xFFFFFFFF),
+    startScheduledWateringCmd(false),
     scheduledWateringIntervalSec(0xFFFFFFFF),
     scheduledWateringDurationSec(0),
     currentTimeSec(0),
@@ -123,4 +124,47 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
 {
     scheduledWateringOn = false;
     scheduledWateringTimeRemaining = 0;
+
+    if(currentTimeSec > dateTimeReferenceSec)
+    {
+        uint32_t timeSinceRefSec = currentTimeSec - dateTimeReferenceSec;
+        uint16_t timeSinceLastScheduledStart = timeSinceRefSec % scheduledWateringIntervalSec;
+
+        if(timeSinceLastScheduledStart < scheduledWateringDurationSec)
+        {
+            if(!startScheduledWateringCmd) //rising edge
+            {
+                startScheduledWateringCmd = true;
+                scheduledWateringTimer.setDuration(static_cast<uint32_t>(scheduledWateringDurationSec) * 1000);
+                scheduledWateringTimer.start();
+            }
+        }
+        else
+        {
+            startScheduledWateringCmd = false;
+        }
+
+        if(stopWateringCmd)
+        {
+            scheduledWateringTimer.stop();
+        }
+        
+        scheduledWateringTimer.update();
+
+        if(scheduledWateringTimer.isRunning())
+        {
+            scheduledWateringOn = true;
+            if(scheduledWateringTimer.isExpired())
+            {
+                scheduledWateringOn = false;
+                scheduledWateringTimer.stop();
+            }
+            scheduledWateringTimeRemaining = scheduledWateringTimer.time() / 1000;
+        }
+        else
+        {
+            scheduledWateringOn = false;
+            scheduledWateringTimeRemaining = 0;
+        }
+    }
 }
