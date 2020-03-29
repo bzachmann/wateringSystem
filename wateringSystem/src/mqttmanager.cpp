@@ -13,8 +13,8 @@ MqttManager::MqttManager():
   startNewManualWateringCmd(false),
   stopWateringCmd(false),
   manualWateringDurationSec(90),
-  pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), false, 5000, true),
-  wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), false, 5000, true)
+  pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), true, 60000, true),
+  wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), true, 60000, true)
 {
 
 }
@@ -151,7 +151,9 @@ void MqttManager::mqttCallback(char * topic, byte * data, unsigned int length)
 
 void MqttManager::subscribeToTopics()
 {
-    mqttClient.subscribe("/#", 1);
+    mqttClient.subscribe("/wateringSystem/commands/manualWateringDuration", 1);
+    mqttClient.loop();
+    mqttClient.subscribe("/wateringSystem/commands/manualWateringCmd", 1);
     mqttClient.loop();
 }
 

@@ -27,6 +27,7 @@ void PublishingManager::update()
     {
         publishingTimer.setDuration(publishingInterval);
 
+        //+1 to account for added null terminator.  Without it, a null term is added, but the last character is sacrificed
         char topicCharArr[topic.length() + 1];
         topic.toCharArray(topicCharArr, topic.length() + 1);
 

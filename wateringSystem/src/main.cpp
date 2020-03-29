@@ -6,7 +6,6 @@
 
 #include <countdowntimer.h>
 
-static CountdownTimer printTimer;
 static WateringManager wateringManager;
 
 void setup() 
@@ -15,9 +14,6 @@ void setup()
   delay(10);
 
   MqttManager::inst.init();
-
-  printTimer.setDuration(1000);
-  printTimer.start();
 }
 
 void loop() 
@@ -35,15 +31,4 @@ void loop()
   wateringManager.update();
 
 
-
-
-  printTimer.update();
-  if(printTimer.isExpired())
-  {
-    printTimer.setDuration(1000);
-    Serial.print("manualWateringTimeRemaining: ");
-    Serial.println(wateringManager.getWateringTimeRemainingSec());
-    Serial.print("manualWateringOn: ");
-    Serial.println(wateringManager.getPumpState());
-  }
 }
