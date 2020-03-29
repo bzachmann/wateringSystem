@@ -128,9 +128,9 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
     if(currentTimeSec > dateTimeReferenceSec)
     {
         uint32_t timeSinceRefSec = currentTimeSec - dateTimeReferenceSec;
-        uint16_t timeSinceLastScheduledStart = timeSinceRefSec % scheduledWateringIntervalSec;
+        uint16_t timeSinceLastScheduledStartSec = timeSinceRefSec % scheduledWateringIntervalSec;
 
-        if(timeSinceLastScheduledStart < 5) //5 seconds to catch the edge.  This should give the processor plenty of time
+        if(timeSinceLastScheduledStartSec < 5) //5 seconds to catch the edge.  This should give the processor plenty of time
         {
             if(!startScheduledWateringCmd) //rising edge
             {
@@ -165,6 +165,17 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
         {
             scheduledWateringOn = false;
             scheduledWateringTimeRemaining = 0;
+        }
+
+        //time until next scheduled watering
+        if(scheduledWateringOn)
+        {
+            //watering right now
+            timeUntilNextScheduledWateringSec = 0;
+        }
+        else
+        {
+            timeUntilNextScheduledWateringSec =  scheduledWateringIntervalSec - timeSinceLastScheduledStartSec;
         }
     }
 }
