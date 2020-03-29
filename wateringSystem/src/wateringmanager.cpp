@@ -4,12 +4,18 @@
 
 
 WateringManager::WateringManager():
-    startManualWateringCmd(false),
     stopWateringCmd(false),
+    startManualWateringCmd(false),
     manualWateringDurationSec(0),
+    dateTimeReferenceSec(0xFFFFFFFF),
+    scheduledWateringIntervalSec(0xFFFFFFFF),
+    scheduledWateringDurationSec(0),
+    currentTimeSec(0),
     pumpState(false),
     wateringTimeRemainingSec(0),
-    manualWateringTimer()
+    timeUntilNextScheduledWateringSec(0xFFFFFFFF),
+    manualWateringTimer(),
+    scheduledWateringTimer()
 {
 
 }
@@ -18,6 +24,70 @@ void WateringManager::update()
 {
     bool manualWateringOn = false;
     uint16_t manualWateringTimeRemaining = 0;
+    updateManualWatering(manualWateringOn, manualWateringTimeRemaining);
+    
+    bool scheduledWateringOn = false;
+    uint16_t scheduledWateringTimeRemaining = 0;
+    updateScheduledWatering(scheduledWateringOn, scheduledWateringTimeRemaining);
+
+    pumpState = manualWateringOn || scheduledWateringOn;
+    wateringTimeRemainingSec = std::max(manualWateringTimeRemaining, scheduledWateringTimeRemaining);
+}
+
+void WateringManager::setStopWateringCmd(bool cmd)
+{
+    stopWateringCmd = cmd;
+}
+
+void WateringManager::setStartManualWateringCmd(bool cmd)
+{
+    startManualWateringCmd = cmd;
+}
+
+void WateringManager::setManualWateringDurationSec(uint16_t sec)
+{
+    manualWateringDurationSec = sec;
+}
+
+void WateringManager::setDateTimeReferenceSec(uint32_t sec)
+{
+    dateTimeReferenceSec = sec;
+}
+
+void WateringManager::setScheduledWateringIntervalSec(uint32_t sec)
+{
+    scheduledWateringIntervalSec = sec;
+}
+
+void WateringManager::setScheduledWateringDurationSec(uint16_t sec)
+{
+    scheduledWateringDurationSec = sec;
+}
+
+void WateringManager::setCurrentTimeSec(uint32_t sec)
+{
+    currentTimeSec = sec;
+}
+
+bool WateringManager::getPumpState()
+{
+    return pumpState;
+}
+
+uint16_t WateringManager::getWateringTimeRemainingSec()
+{
+    return wateringTimeRemainingSec;
+}
+
+uint32_t WateringManager::getTimeUntilNextScheduledWateringSec()
+{
+    return timeUntilNextScheduledWateringSec;
+}
+
+void WateringManager::updateManualWatering(bool & manualWateringOn, uint16_t & manualWateringTimeRemaining)
+{
+    manualWateringOn = false;
+    manualWateringTimeRemaining = 0;
 
     if(startManualWateringCmd)
     {
@@ -47,32 +117,10 @@ void WateringManager::update()
         manualWateringOn = false;
         manualWateringTimeRemaining = 0;
     }
-    
-    pumpState = manualWateringOn;
-    wateringTimeRemainingSec = manualWateringTimeRemaining;
 }
 
-void WateringManager::setStartManualWateringCmd(bool cmd)
+void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16_t & scheduledWateringTimeRemaining)
 {
-    startManualWateringCmd = cmd;
-}
-
-void WateringManager::setManualWateringDurationSec(uint16_t sec)
-{
-    manualWateringDurationSec = sec;
-}
-
-void WateringManager::setStopWateringCmd(bool cmd)
-{
-    stopWateringCmd = cmd;
-}
-
-bool WateringManager::getPumpState()
-{
-    return pumpState;
-}
-
-uint16_t WateringManager::getWateringTimeRemainingSec()
-{
-    return wateringTimeRemainingSec;
+    scheduledWateringOn = false;
+    scheduledWateringTimeRemaining = 0;
 }

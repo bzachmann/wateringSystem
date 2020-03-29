@@ -21,8 +21,6 @@ void loop()
   WifiManager::inst.update();
   
   MqttManager::inst.setWifiConnected(WifiManager::inst.isConnected());
-  MqttManager::inst.setPumpState(wateringManager.getPumpState()); //delayed one loop
-  MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec()); //delayed one loop
   MqttManager::inst.update();
 
   wateringManager.setManualWateringDurationSec(MqttManager::inst.getManualWateringDurationSec());
@@ -30,5 +28,7 @@ void loop()
   wateringManager.setStopWateringCmd(MqttManager::inst.getStopWateringCmd());
   wateringManager.update();
 
-
+  //update delayed until next loop when update is run
+  MqttManager::inst.setPumpState(wateringManager.getPumpState()); 
+  MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec());
 }
