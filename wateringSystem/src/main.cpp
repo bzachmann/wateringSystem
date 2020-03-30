@@ -31,4 +31,5 @@ void loop()
   //update delayed until next loop when update is run
   MqttManager::inst.setPumpState(wateringManager.getPumpState()); 
   MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec());
+  MqttManager::inst.setTimeUntilScheduledWateringSec(87456); //todo this is for testing
 }

@@ -25,6 +25,7 @@ public:
 
     void setPumpState(bool state);
     void setWateringTimeRemainingSec(uint16_t sec);
+    void setTimeUntilScheduledWateringSec(uint32_t sec);
 
 private:
     void manageMqttConnection();
@@ -37,6 +38,7 @@ private:
     static int32_t mqttPayloadToInt(byte * data, uint32_t length);
     static uint32_t mqttPayloadToDateTimeRefSec(byte * data, uint32_t length, bool & ok);
     static String formatDateTimeRefSec(uint32_t dateTimeRefSec);
+    static String formatTimeUntilScheduledWatering(uint32_t sec);
 
 public:
     static MqttManager inst;
@@ -57,6 +59,7 @@ private:
 
     PublishingManager pumpStatePublisher;
     PublishingManager wateringTimeRemainingPublisher;
+    PublishingManager timeUntilNextScheduledWateringPublisher;
 };
 
 #endif /* MQTTMANAGER_H */

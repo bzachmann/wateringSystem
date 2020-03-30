@@ -21,7 +21,8 @@ MqttManager::MqttManager():
   scheduledWateringIntervalSec(172800), //48 hours
   scheduledWateringDurationSec(90),
   pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), true, 60000, true),
-  wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), true, 60000, true)
+  wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), true, 60000, true),
+  timeUntilNextScheduledWateringPublisher(mqttClient, String("/wateringSystem/status/timeUntilNextScheduledWatering"), true, 300000, true)
 {
 
 }
@@ -38,6 +39,7 @@ void MqttManager::update()
 
   pumpStatePublisher.update();
   wateringTimeRemainingPublisher.update();
+  timeUntilNextScheduledWateringPublisher.update();
 
   mqttClient.loop();
 }
@@ -89,6 +91,11 @@ void MqttManager::setPumpState(bool state)
 void MqttManager::setWateringTimeRemainingSec(uint16_t sec)
 {
   wateringTimeRemainingPublisher.setValue(String(sec));
+}
+
+void MqttManager::setTimeUntilScheduledWateringSec(uint32_t sec)
+{
+  timeUntilNextScheduledWateringPublisher.setValue(formatTimeUntilScheduledWatering(sec));
 }
 
 void MqttManager::manageMqttConnection() 
@@ -388,5 +395,49 @@ String MqttManager::formatDateTimeRefSec(uint32_t dateTimeRefSec)
                   dateTime.minute());
 
   return String(buffer);
+}
+
+String MqttManager::formatTimeUntilScheduledWatering(uint32_t sec)
+{
+  sec = std::min(sec, (uint32_t)INT32_MAX);
+  TimeSpan timeSpan((int32_t)sec);
+
+  uint16_t days = timeSpan.days();
+  uint16_t hours = timeSpan.hours();
+  uint16_t minutes = timeSpan.minutes();
+  uint16_t seconds = timeSpan.seconds();
+
+  //round up to next minute
+  if(seconds > 0)
+  {
+    minutes++;
+  }
+  if(minutes > 59)
+  {
+    minutes = 0;
+    hours++;
+  }
+  if(hours > 23)
+  {
+    hours = 0;
+    days++;
+  }
+
+  if (days > 99)
+  {
+    days = 99;
+    hours = 23;
+    minutes = 59;
+  }
+
+  char buffer[9];
+  
+  sprintf(buffer, "%02u:%02u:%02u",
+                    days,
+                    hours,
+                    minutes);
+
+  return String(buffer);
+
 }
 
