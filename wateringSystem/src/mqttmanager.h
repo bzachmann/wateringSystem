@@ -19,6 +19,9 @@ public:
     bool getStartManualWateringCmd();
     uint16_t getManualWateringDurationSec();
     bool getStopWateringCmd();
+    uint32_t getDateTimeReferenceSec();
+    uint32_t getScheduledWateringIntervalSec();
+    uint16_t getScheduledWateringDurationSec();
 
     void setPumpState(bool state);
     void setWateringTimeRemainingSec(uint16_t sec);
@@ -29,11 +32,11 @@ private:
     void mqttCallback(char * topic, byte * data, unsigned int length);
     void subscribeToTopics();
 
-    void managePumpStatePublishing();
-
     static String statusToStr(int8_t status);
     static void printMqttPayload(char* topic, byte * data, unsigned int length);
     static int32_t mqttPayloadToInt(byte * data, uint32_t length);
+    static uint32_t mqttPayloadToDateTimeRefSec(byte * data, uint32_t length, bool & ok);
+    static String formatDateTimeRefSec(uint32_t dateTimeRefSec);
 
 public:
     static MqttManager inst;
@@ -48,6 +51,9 @@ private:
     bool startNewManualWateringCmd;
     bool stopWateringCmd;
     uint16_t manualWateringDurationSec;
+    uint32_t dateTimeReferenceSec; //Unix time stamp (time since Epoch).  B/c uint32_t, will stop working in 2038
+    uint32_t scheduledWateringIntervalSec;
+    uint16_t scheduledWateringDurationSec;
 
     PublishingManager pumpStatePublisher;
     PublishingManager wateringTimeRemainingPublisher;
