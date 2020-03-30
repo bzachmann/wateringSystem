@@ -12,6 +12,7 @@ WateringManager::WateringManager():
     scheduledWateringIntervalSec(0xFFFFFFFF),
     scheduledWateringDurationSec(0),
     currentTimeSec(0),
+    currentTimeValid(false),
     pumpState(false),
     wateringTimeRemainingSec(0),
     timeUntilNextScheduledWateringSec(0xFFFFFFFF),
@@ -65,9 +66,10 @@ void WateringManager::setScheduledWateringDurationSec(uint16_t sec)
     scheduledWateringDurationSec = sec;
 }
 
-void WateringManager::setCurrentTimeSec(uint32_t sec)
+void WateringManager::setCurrentTimeSec(uint32_t sec, bool valid)
 {
     currentTimeSec = sec;
+    currentTimeValid = valid;
 }
 
 bool WateringManager::getPumpState()
@@ -125,7 +127,8 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
     scheduledWateringOn = false;
     scheduledWateringTimeRemaining = 0;
 
-    if(currentTimeSec > dateTimeReferenceSec)
+    //new cycle trigger
+    if(currentTimeValid && (currentTimeSec > dateTimeReferenceSec))
     {
         uint32_t timeSinceRefSec = currentTimeSec - dateTimeReferenceSec;
         uint16_t timeSinceLastScheduledStartSec = timeSinceRefSec % scheduledWateringIntervalSec;
@@ -143,44 +146,56 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
         {
             startScheduledWateringCmd = false;
         }
+    }
 
-        if(stopWateringCmd)
-        {
-            scheduledWateringTimer.stop();
-        }
-        
-        scheduledWateringTimer.update();
+    //stop cycle
+    if(stopWateringCmd)
+    {
+        scheduledWateringTimer.stop();
+    }
 
-        if(scheduledWateringTimer.isRunning())
-        {
-            scheduledWateringOn = true;
-            if(scheduledWateringTimer.isExpired())
-            {
-                scheduledWateringOn = false;
-                scheduledWateringTimer.stop();
-            }
-            scheduledWateringTimeRemaining = scheduledWateringTimer.time() / 1000;
-        }
-        else
+    //update cycle timer
+    scheduledWateringTimer.update();
+
+    if(scheduledWateringTimer.isRunning())
+    {
+        scheduledWateringOn = true;
+        if(scheduledWateringTimer.isExpired())
         {
             scheduledWateringOn = false;
-            scheduledWateringTimeRemaining = 0;
+            scheduledWateringTimer.stop();
         }
-
-        //time until next scheduled watering
-        if(scheduledWateringOn)
-        {
-            //watering right now
-            timeUntilNextScheduledWateringSec = 0;
-        }
-        else
-        {
-            timeUntilNextScheduledWateringSec =  scheduledWateringIntervalSec - timeSinceLastScheduledStartSec;
-        }
+        scheduledWateringTimeRemaining = scheduledWateringTimer.time() / 1000;
     }
     else
     {
-        timeUntilNextScheduledWateringSec = dateTimeReferenceSec - currentTimeSec;
+        scheduledWateringOn = false;
+        scheduledWateringTimeRemaining = 0;
     }
-    
+
+    //time until next scheduled watering
+    if(scheduledWateringOn)
+    {
+        //watering right now
+        timeUntilNextScheduledWateringSec = 0;        
+    }
+    else if(currentTimeValid)
+    {
+        if(currentTimeSec > dateTimeReferenceSec)
+        {
+            uint32_t timeSinceRefSec = currentTimeSec - dateTimeReferenceSec;
+            uint16_t timeSinceLastScheduledStartSec = timeSinceRefSec % scheduledWateringIntervalSec;
+            timeUntilNextScheduledWateringSec =  scheduledWateringIntervalSec - timeSinceLastScheduledStartSec;
+        }
+        else
+        {
+            timeUntilNextScheduledWateringSec = dateTimeReferenceSec - currentTimeSec;
+        }
+        
+    }
+    else
+    {
+        timeUntilNextScheduledWateringSec = 0xFFFFFFFF;
+    }     
+
 }

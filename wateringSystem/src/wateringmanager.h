@@ -17,7 +17,7 @@ public:
     void setDateTimeReferenceSec(uint32_t sec);
     void setScheduledWateringIntervalSec(uint32_t sec);
     void setScheduledWateringDurationSec(uint16_t sec);
-    void setCurrentTimeSec(uint32_t sec);
+    void setCurrentTimeSec(uint32_t sec, bool valid);
         
     bool getPumpState();
     uint16_t getWateringTimeRemainingSec();
@@ -37,6 +37,7 @@ private:
     uint32_t scheduledWateringIntervalSec;
     uint16_t scheduledWateringDurationSec;
     uint32_t currentTimeSec;
+    bool currentTimeValid;
 
     bool pumpState;
     uint16_t wateringTimeRemainingSec;
