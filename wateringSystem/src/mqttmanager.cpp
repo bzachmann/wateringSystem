@@ -20,9 +20,11 @@ MqttManager::MqttManager():
   dateTimeReferenceSec(1588316400), // 05-01-2020 @ 7:00 am
   scheduledWateringIntervalSec(172800), //48 hours
   scheduledWateringDurationSec(90),
+  rainDelay(false),
   pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), true, 60000, true),
   wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), true, 60000, true),
-  timeUntilNextScheduledWateringPublisher(mqttClient, String("/wateringSystem/status/timeUntilNextScheduledWatering"), true, 300000, true)
+  timeUntilNextScheduledWateringPublisher(mqttClient, String("/wateringSystem/status/timeUntilNextScheduledWatering"), true, 300000, true),
+  rainDelayPublisher(mqttClient, String("/wateringSystem/commands/rainDelay"), true, 300000, true)
 {
 
 }
@@ -83,6 +85,11 @@ uint16_t MqttManager::getScheduledWateringDurationSec()
   return scheduledWateringDurationSec;
 }
 
+bool MqttManager::getRainDelay()
+{
+  return rainDelay;
+}
+
 void MqttManager::setPumpState(bool state)
 {
   pumpStatePublisher.setValue(state ? String("1") : String("0"));
@@ -96,6 +103,12 @@ void MqttManager::setWateringTimeRemainingSec(uint16_t sec)
 void MqttManager::setTimeUntilScheduledWateringSec(uint32_t sec)
 {
   timeUntilNextScheduledWateringPublisher.setValue(formatTimeUntilScheduledWatering(sec));
+}
+
+void MqttManager::setRainDelay(bool value)
+{
+  rainDelay = value;
+  rainDelayPublisher.setValue(String((uint8_t)value));
 }
 
 void MqttManager::manageMqttConnection() 
@@ -216,6 +229,17 @@ void MqttManager::mqttCallback(char * topic, byte * data, unsigned int length)
   {
     scheduledWateringDurationSec = static_cast<uint16_t>(mqttPayloadToInt(data, length));
   }
+  else if(strcmp(topic, "/wateringSystem/commands/rainDelay") == 0)
+  {
+    if(static_cast<char>(data[0]) == '0')
+    {
+      rainDelay = true;
+    }
+    else
+    {
+      rainDelay = false;
+    }
+  }
 }
 
 void MqttManager::subscribeToTopics()
@@ -229,6 +253,8 @@ void MqttManager::subscribeToTopics()
     mqttClient.subscribe("/wateringSystem/commands/scheduledWateringInterval", 1);
     mqttClient.loop();
     mqttClient.subscribe("/wateringSystem/commands/scheduledWateringDuration", 1);
+    mqttClient.loop();
+    mqttClient.subscribe("/wateringSystem/commands/rainDelay");
     mqttClient.loop();
 }
 

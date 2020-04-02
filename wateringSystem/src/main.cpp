@@ -37,10 +37,12 @@ void loop()
   wateringManager.setDateTimeReferenceSec(MqttManager::inst.getDateTimeReferenceSec());
   wateringManager.setScheduledWateringDurationSec(MqttManager::inst.getScheduledWateringDurationSec());
   wateringManager.setScheduledWateringIntervalSec(MqttManager::inst.getScheduledWateringIntervalSec());
+  wateringManager.setRainDelay(MqttManager::inst.getRainDelay());
   wateringManager.update();
 
   //update delayed until next loop when update is run
   MqttManager::inst.setPumpState(wateringManager.getPumpState()); 
   MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec());
-  MqttManager::inst.setTimeUntilScheduledWateringSec(wateringManager.getTimeUntilNextScheduledWateringSec()); //todo this is for testing
+  MqttManager::inst.setTimeUntilScheduledWateringSec(wateringManager.getTimeUntilNextScheduledWateringSec());
+  MqttManager::inst.setRainDelay(wateringManager.getRainDelay());
 }

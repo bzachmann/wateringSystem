@@ -13,6 +13,7 @@ WateringManager::WateringManager():
     scheduledWateringDurationSec(0),
     currentTimeSec(0),
     currentTimeValid(false),
+    rainDelay(false),
     pumpState(false),
     wateringTimeRemainingSec(0),
     timeUntilNextScheduledWateringSec(0xFFFFFFFF),
@@ -72,6 +73,11 @@ void WateringManager::setCurrentTimeSec(uint32_t sec, bool valid)
     currentTimeValid = valid;
 }
 
+void WateringManager::setRainDelay(bool value)
+{
+    rainDelay = value;
+}
+
 bool WateringManager::getPumpState()
 {
     return pumpState;
@@ -85,6 +91,11 @@ uint16_t WateringManager::getWateringTimeRemainingSec()
 uint32_t WateringManager::getTimeUntilNextScheduledWateringSec()
 {
     return timeUntilNextScheduledWateringSec;
+}
+
+bool WateringManager::getRainDelay()
+{
+    return rainDelay;
 }
 
 void WateringManager::updateManualWatering(bool & manualWateringOn, uint16_t & manualWateringTimeRemaining)
@@ -135,16 +146,23 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
 
         if(timeSinceLastScheduledStartSec < 5) //5 seconds to catch the edge.  This should give the processor plenty of time
         {
-            if(!startScheduledWateringCmd) //rising edge
+            if(!startScheduledWateringCmd) //rising edge, do once
             {
-                startScheduledWateringCmd = true;
-                scheduledWateringTimer.setDuration(static_cast<uint32_t>(scheduledWateringDurationSec) * 1000);
-                scheduledWateringTimer.start();
+                startScheduledWateringCmd = true; //do once
+                if(rainDelay) //do nothing but set rain delay back to false.  We have just skipped this cycle
+                {
+                    rainDelay = false;
+                }
+                else //no rain delay. start as normal.
+                {
+                    scheduledWateringTimer.setDuration(static_cast<uint32_t>(scheduledWateringDurationSec) * 1000);
+                    scheduledWateringTimer.start();
+                } 
             }
         }
         else
         {
-            startScheduledWateringCmd = false;
+            startScheduledWateringCmd = false; //reset the "do once"
         }
     }
 
@@ -185,11 +203,11 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
         {
             uint32_t timeSinceRefSec = currentTimeSec - dateTimeReferenceSec;
             uint32_t timeSinceLastScheduledStartSec = timeSinceRefSec % scheduledWateringIntervalSec;
-            timeUntilNextScheduledWateringSec =  scheduledWateringIntervalSec - timeSinceLastScheduledStartSec;
+            timeUntilNextScheduledWateringSec =  (scheduledWateringIntervalSec - timeSinceLastScheduledStartSec) + (rainDelay ? scheduledWateringIntervalSec : 0);
         }
         else
         {
-            timeUntilNextScheduledWateringSec = dateTimeReferenceSec - currentTimeSec;
+            timeUntilNextScheduledWateringSec = (dateTimeReferenceSec - currentTimeSec) + (rainDelay ? scheduledWateringIntervalSec : 0);
         }
         
     }
