@@ -42,6 +42,7 @@ void MqttManager::update()
   pumpStatePublisher.update();
   wateringTimeRemainingPublisher.update();
   timeUntilNextScheduledWateringPublisher.update();
+  rainDelayPublisher.update();
 
   mqttClient.loop();
 }
@@ -233,11 +234,11 @@ void MqttManager::mqttCallback(char * topic, byte * data, unsigned int length)
   {
     if(static_cast<char>(data[0]) == '0')
     {
-      rainDelay = true;
+      rainDelay = false;
     }
     else
     {
-      rainDelay = false;
+      rainDelay = true;
     }
   }
 }
