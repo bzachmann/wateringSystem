@@ -14,6 +14,7 @@ WateringManager::WateringManager():
     currentTimeSec(0),
     currentTimeValid(false),
     rainDelay(false),
+    rainDelayReset(false),
     pumpState(false),
     wateringTimeRemainingSec(0),
     timeUntilNextScheduledWateringSec(0xFFFFFFFF),
@@ -93,9 +94,9 @@ uint32_t WateringManager::getTimeUntilNextScheduledWateringSec()
     return timeUntilNextScheduledWateringSec;
 }
 
-bool WateringManager::getRainDelay()
+bool WateringManager::getRainDelayReset()
 {
-    return rainDelay;
+    return rainDelayReset;
 }
 
 void WateringManager::updateManualWatering(bool & manualWateringOn, uint16_t & manualWateringTimeRemaining)
@@ -137,6 +138,7 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
 {
     scheduledWateringOn = false;
     scheduledWateringTimeRemaining = 0;
+    rainDelayReset = false;
 
     //new cycle trigger
     if(currentTimeValid && (currentTimeSec > dateTimeReferenceSec))
@@ -151,7 +153,7 @@ void WateringManager::updateScheduledWatering(bool & scheduledWateringOn, uint16
                 startScheduledWateringCmd = true; //do once
                 if(rainDelay) //do nothing but set rain delay back to false.  We have just skipped this cycle
                 {
-                    rainDelay = false;
+                    rainDelayReset = true;
                 }
                 else //no rain delay. start as normal.
                 {

@@ -27,7 +27,7 @@ public:
     void setPumpState(bool state);
     void setWateringTimeRemainingSec(uint16_t sec);
     void setTimeUntilScheduledWateringSec(uint32_t sec);
-    void setRainDelay(bool value);
+    void resetRainDelay();
 
 private:
     void manageMqttConnection();
@@ -63,7 +63,6 @@ private:
     PublishingManager pumpStatePublisher;
     PublishingManager wateringTimeRemainingPublisher;
     PublishingManager timeUntilNextScheduledWateringPublisher;
-    PublishingManager rainDelayPublisher;
 };
 
 #endif /* MQTTMANAGER_H */

@@ -61,5 +61,9 @@ void loop()
   MqttManager::inst.setPumpState(wateringManager.getPumpState()); 
   MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec());
   MqttManager::inst.setTimeUntilScheduledWateringSec(wateringManager.getTimeUntilNextScheduledWateringSec());
-  MqttManager::inst.setRainDelay(wateringManager.getRainDelay());
+  
+  if(wateringManager.getRainDelayReset())
+  {
+    MqttManager::inst.resetRainDelay();
+  }
 }

@@ -23,7 +23,7 @@ public:
     bool getPumpState();
     uint16_t getWateringTimeRemainingSec();
     uint32_t getTimeUntilNextScheduledWateringSec();
-    bool getRainDelay();
+    bool getRainDelayReset();
 
 private:
     void updateManualWatering(bool & manualWateringOn, uint16_t & manualWateringTimeRemaining);
@@ -41,6 +41,7 @@ private:
     uint32_t currentTimeSec;
     bool currentTimeValid;
     bool rainDelay;
+    bool rainDelayReset;
 
     bool pumpState;
     uint16_t wateringTimeRemainingSec;

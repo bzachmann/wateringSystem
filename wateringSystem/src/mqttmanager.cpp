@@ -23,8 +23,7 @@ MqttManager::MqttManager():
   rainDelay(false),
   pumpStatePublisher(mqttClient, String("/wateringSystem/status/pumpState"), true, 60000, true),
   wateringTimeRemainingPublisher(mqttClient, String("/wateringSystem/status/wateringTimeRemaining"), true, 60000, true),
-  timeUntilNextScheduledWateringPublisher(mqttClient, String("/wateringSystem/status/timeUntilNextScheduledWatering"), true, 300000, true),
-  rainDelayPublisher(mqttClient, String("/wateringSystem/commands/rainDelay"), true, 300000, true)
+  timeUntilNextScheduledWateringPublisher(mqttClient, String("/wateringSystem/status/timeUntilNextScheduledWatering"), true, 300000, true)
 {
 
 }
@@ -42,7 +41,6 @@ void MqttManager::update()
   pumpStatePublisher.update();
   wateringTimeRemainingPublisher.update();
   timeUntilNextScheduledWateringPublisher.update();
-  rainDelayPublisher.update();
 
   mqttClient.loop();
 }
@@ -106,10 +104,13 @@ void MqttManager::setTimeUntilScheduledWateringSec(uint32_t sec)
   timeUntilNextScheduledWateringPublisher.setValue(formatTimeUntilScheduledWatering(sec));
 }
 
-void MqttManager::setRainDelay(bool value)
+void MqttManager::resetRainDelay()
 {
-  rainDelay = value;
-  rainDelayPublisher.setValue(String((uint8_t)value));
+  rainDelay = false;
+  if(mqttConnected)
+  {
+    mqttClient.publish("/wateringSystem/commands/rainDelay", "0", true);
+  }
 }
 
 void MqttManager::manageMqttConnection() 
