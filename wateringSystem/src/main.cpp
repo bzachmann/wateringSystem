@@ -7,6 +7,7 @@
 
 #include <countdowntimer.h>
 
+#define RELAY_PIN   15
 
 static WateringManager wateringManager;
 //static RTC_DS1307 rtc;
@@ -16,6 +17,8 @@ uint32_t timeNow;
 
 void setup() 
 {
+  pinMode(RELAY_PIN, OUTPUT);
+
   Serial.begin(115200);
   delay(10);
 
@@ -61,9 +64,10 @@ void loop()
   MqttManager::inst.setPumpState(wateringManager.getPumpState()); 
   MqttManager::inst.setWateringTimeRemainingSec(wateringManager.getWateringTimeRemainingSec());
   MqttManager::inst.setTimeUntilScheduledWateringSec(wateringManager.getTimeUntilNextScheduledWateringSec());
-  
   if(wateringManager.getRainDelayReset())
   {
     MqttManager::inst.resetRainDelay();
   }
+
+  digitalWrite(RELAY_PIN, wateringManager.getPumpState());
 }
