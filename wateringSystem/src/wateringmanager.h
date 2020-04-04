@@ -18,10 +18,12 @@ public:
     void setScheduledWateringIntervalSec(uint32_t sec);
     void setScheduledWateringDurationSec(uint16_t sec);
     void setCurrentTimeSec(uint32_t sec, bool valid);
+    void setRainDelay(bool value);
         
     bool getPumpState();
     uint16_t getWateringTimeRemainingSec();
     uint32_t getTimeUntilNextScheduledWateringSec();
+    bool getRainDelayReset();
 
 private:
     void updateManualWatering(bool & manualWateringOn, uint16_t & manualWateringTimeRemaining);
@@ -38,6 +40,8 @@ private:
     uint16_t scheduledWateringDurationSec;
     uint32_t currentTimeSec;
     bool currentTimeValid;
+    bool rainDelay;
+    bool rainDelayReset;
 
     bool pumpState;
     uint16_t wateringTimeRemainingSec;

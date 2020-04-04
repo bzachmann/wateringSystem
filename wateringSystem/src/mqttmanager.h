@@ -22,10 +22,12 @@ public:
     uint32_t getDateTimeReferenceSec();
     uint32_t getScheduledWateringIntervalSec();
     uint16_t getScheduledWateringDurationSec();
+    bool getRainDelay();
 
     void setPumpState(bool state);
     void setWateringTimeRemainingSec(uint16_t sec);
     void setTimeUntilScheduledWateringSec(uint32_t sec);
+    void resetRainDelay();
 
 private:
     void manageMqttConnection();
@@ -56,6 +58,7 @@ private:
     uint32_t dateTimeReferenceSec; //Unix time stamp (time since Epoch).  B/c uint32_t, will stop working in 2038
     uint32_t scheduledWateringIntervalSec;
     uint16_t scheduledWateringDurationSec;
+    bool rainDelay;
 
     PublishingManager pumpStatePublisher;
     PublishingManager wateringTimeRemainingPublisher;
